@@ -20,6 +20,9 @@ jobs:
           test -f manifest.webmanifest
           test -f sw.js
           test -f assets/icon.svg
+          test -f README-APP.txt
+          test -f iniciar_app.bat
+          test -f iniciar_app.sh
 
       - name: Validate converter contract in index.html
         run: |
@@ -41,6 +44,9 @@ jobs:
           cp manifest.webmanifest dist/unit-converter-app/manifest.webmanifest
           cp sw.js dist/unit-converter-app/sw.js
           cp assets/icon.svg dist/unit-converter-app/assets/icon.svg
+          cp README-APP.txt dist/unit-converter-app/README-APP.txt
+          cp iniciar_app.bat dist/unit-converter-app/iniciar_app.bat
+          cp iniciar_app.sh dist/unit-converter-app/iniciar_app.sh
           cd dist
           zip -r unit-converter-app.zip unit-converter-app
 
