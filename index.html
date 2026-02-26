@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calculadora / Conversor de Unidades</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --muted: #94a3b8;
+      --text: #e2e8f0;
+      --accent: #22c55e;
+      --accent-2: #38bdf8;
+      --danger: #f87171;
+      --warning: #facc15;
+      --border: #334155;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text);
+      background: radial-gradient(circle at top, #1e293b, var(--bg));
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .app {
+      width: min(900px, 100%);
+      background: color-mix(in oklab, var(--panel) 90%, black 10%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+      overflow: hidden;
+    }
+
+    .header {
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.3rem;
+    }
+
+    .sub {
+      margin: 0;
+      color: var(--muted);
+      font-size: .95rem;
+    }
+
+    .content {
+      padding: 20px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .full { grid-column: 1 / -1; }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    label {
+      font-size: .9rem;
+      color: var(--muted);
+    }
+
+    select, input, button {
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #0b1220;
+      color: var(--text);
+      padding: 10px 12px;
+      font-size: 1rem;
+    }
+
+    button {
+      cursor: pointer;
+      transition: .2s ease;
+      font-weight: 600;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #16a34a, var(--accent));
+      border-color: #16a34a;
+      color: #052e16;
+    }
+
+    .btn-secondary {
+      background: #0b1220;
+      border-color: #475569;
+      color: var(--text);
+    }
+
+    button:hover { filter: brightness(1.08); }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .result {
+      border-top: 1px solid var(--border);
+      background: rgba(15, 23, 42, .6);
+      padding: 18px 20px 22px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .result-item { color: var(--muted); }
+
+    .value {
+      color: var(--accent-2);
+      font-weight: 700;
+      font-size: 1.15rem;
+    }
+
+    .msg {
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: .95rem;
+      border: 1px solid transparent;
+      display: none;
+    }
+
+    .msg.show { display: block; }
+    .msg.error {
+      color: #fecaca;
+      background: rgba(127, 29, 29, .35);
+      border-color: #7f1d1d;
+    }
+    .msg.warning {
+      color: #fef08a;
+      background: rgba(113, 63, 18, .35);
+      border-color: #854d0e;
+    }
+
+    @media (max-width: 700px) {
+      .content { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="header">
+      <h1>Calculadora / Conversor de Unidades</h1>
+      <p class="sub">Conversión directa, inversa y por ruta (grafo) usando reglas JSON.</p>
+    </header>
+
+    <section class="content">
+      <div class="field full">
+        <label for="category">Categoría</label>
+        <select id="category"></select>
+      </div>
+
+      <div class="field">
+        <label for="fromUnit">Unidad origen</label>
+        <select id="fromUnit"></select>
+      </div>
+
+      <div class="field">
+        <label for="toUnit">Unidad destino</label>
+        <select id="toUnit"></select>
+      </div>
+
+      <div class="field full">
+        <label for="value">Valor</label>
+        <input id="value" type="number" step="any" min="0" placeholder="Ej: 10" />
+      </div>
+
+      <div class="row full">
+        <button id="swapBtn" class="btn-secondary" type="button">Intercambiar</button>
+        <button id="convertBtn" class="btn-primary" type="button">Convertir</button>
+      </div>
+
+      <div id="errorMsg" class="msg error full"></div>
+      <div id="warningMsg" class="msg warning full"></div>
+    </section>
+
+    <section class="result">
+      <div class="result-item">Resultado: <span id="result" class="value">—</span></div>
+      <div class="result-item">Factor total: <span id="factor">—</span></div>
+      <div class="result-item">Ruta usada: <span id="path">—</span></div>
+    </section>
+  </main>
+
+  <script>
+    const CONVERSIONS = [
+      {"category":"Masa (peso)","from_unit":"Anega o fanega","to_unit":"Libras","multiplier":800,"to_abbrev":"lb"},
+      {"category":"Masa (peso)","from_unit":"Anega o fanega","to_unit":"Libras","multiplier":600,"to_abbrev":"lb"},
+      {"category":"Masa (peso)","from_unit":"Arroba","to_unit":"Libras","multiplier":25,"to_abbrev":"lb"},
+      {"category":"Masa (peso)","from_unit":"Saco","to_unit":"Libras","multiplier":200,"to_abbrev":"lb"},
+      {"category":"Masa (peso)","from_unit":"Carga de 200 libras","to_unit":"Libras","multiplier":200,"to_abbrev":"lb"},
+      {"category":"Masa (peso)","from_unit":"Quintal","to_unit":"Libras","multiplier":100,"to_abbrev":"lb"},
+      {"category":"Masa (peso)","from_unit":"Kilogramo","to_unit":"Libras","multiplier":2.20462,"to_abbrev":"lb"},
+      {"category":"Masa (peso)","from_unit":"Libra","to_unit":"Kilogramo","multiplier":0.453592,"to_abbrev":"kg"},
+      {"category":"Masa (peso)","from_unit":"Docena de unidades","to_unit":"Unidades","multiplier":12,"to_abbrev":"u"},
+      {"category":"Masa (peso)","from_unit":"Media docena de unidades","to_unit":"Unidades","multiplier":6,"to_abbrev":"u"},
+      {"category":"Masa (peso)","from_unit":"Centena de unidades","to_unit":"Unidades","multiplier":100,"to_abbrev":"u"},
+      {"category":"Masa (peso)","from_unit":"Millares","to_unit":"Unidades","multiplier":1000,"to_abbrev":"u"},
+      {"category":"Masa (peso)","from_unit":"Tonelada","to_unit":"Kilogramo","multiplier":1000,"to_abbrev":"kg"},
+      {"category":"Masa (peso)","from_unit":"Gram","to_unit":"Kilogramo","multiplier":0.001,"to_abbrev":"kg"},
+      {"category":"Masa (peso)","from_unit":"Onza","to_unit":"Libras","multiplier":0.0625,"to_abbrev":"lb"},
+      {"category":"Masa (peso)","from_unit":"Quintal métrico","to_unit":"Kilogramo","multiplier":100,"to_abbrev":"kg"},
+      {"category":"Masa (peso)","from_unit":"Tonelada métrica","to_unit":"Kilogramo","multiplier":1000,"to_abbrev":"kg"},
+      {"category":"Masa (peso)","from_unit":"Kilogramo","to_unit":"Onzas","multiplier":35.27396194958041,"to_abbrev":"oz"},
+      {"category":"Masa (peso)","from_unit":"Libras","to_unit":"Onzas","multiplier":16,"to_abbrev":"oz"},
+      {"category":"Longitud","from_unit":"Centímetro","to_unit":"Centímetros","multiplier":1,"to_abbrev":"cm"},
+      {"category":"Longitud","from_unit":"Pulgada","to_unit":"Centímetros","multiplier":2.54,"to_abbrev":"cm"},
+      {"category":"Longitud","from_unit":"Pie","to_unit":"Centímetros","multiplier":30.48,"to_abbrev":"cm"},
+      {"category":"Longitud","from_unit":"Yarda","to_unit":"Centímetros","multiplier":91.44,"to_abbrev":"cm"},
+      {"category":"Longitud","from_unit":"Metro","to_unit":"Centímetros","multiplier":100,"to_abbrev":"cm"},
+      {"category":"Longitud","from_unit":"Kilómetro","to_unit":"Metro","multiplier":1000,"to_abbrev":"m"},
+      {"category":"Longitud","from_unit":"Milla","to_unit":"Metro","multiplier":1609.344,"to_abbrev":"m"},
+      {"category":"Longitud","from_unit":"Vara","to_unit":"Metro","multiplier":0.835905,"to_abbrev":"m"},
+      {"category":"Longitud","from_unit":"Braza","to_unit":"Metro","multiplier":1.67181,"to_abbrev":"m"},
+      {"category":"Longitud","from_unit":"Legua","to_unit":"Metro","multiplier":5000,"to_abbrev":"m"},
+      {"category":"Superficie","from_unit":"Metro cuadrado","to_unit":"Metro cuadrado","multiplier":1,"to_abbrev":"m2"},
+      {"category":"Superficie","from_unit":"Kilómetro cuadrado","to_unit":"Metro cuadrado","multiplier":1000000,"to_abbrev":"m2"},
+      {"category":"Superficie","from_unit":"Hectárea","to_unit":"Metro cuadrado","multiplier":10000,"to_abbrev":"m2"},
+      {"category":"Superficie","from_unit":"Manzana","to_unit":"Metro cuadrado","multiplier":6988.96,"to_abbrev":"m2"},
+      {"category":"Superficie","from_unit":"Tarea","to_unit":"Metro cuadrado","multiplier":435.6,"to_abbrev":"m2"},
+      {"category":"Superficie","from_unit":"Acre","to_unit":"Metro cuadrado","multiplier":4046.8564224,"to_abbrev":"m2"},
+      {"category":"Superficie","from_unit":"Vara cuadrada","to_unit":"Metro cuadrado","multiplier":0.698896,"to_abbrev":"m2"},
+      {"category":"Superficie","from_unit":"Pie cuadrado","to_unit":"Metro cuadrado","multiplier":0.09290304,"to_abbrev":"m2"},
+      {"category":"Superficie","from_unit":"Pulgada cuadrada","to_unit":"Metro cuadrado","multiplier":0.00064516,"to_abbrev":"m2"},
+      {"category":"Superficie","from_unit":"Yarda cuadrada","to_unit":"Metro cuadrado","multiplier":0.83612736,"to_abbrev":"m2"},
+      {"category":"Superficie","from_unit":"Millas cuadradas","to_unit":"Metro cuadrado","multiplier":2589988.110336,"to_abbrev":"m2"},
+      {"category":"Superficie","from_unit":"Centímetro cuadrado","to_unit":"Metro cuadrado","multiplier":0.0001,"to_abbrev":"m2"},
+      {"category":"Superficie","from_unit":"Milímetro cuadrado","to_unit":"Metro cuadrado","multiplier":0.000001,"to_abbrev":"m2"},
+      {"category":"Volumen","from_unit":"Galón","to_unit":"Botellas","multiplier":4,"to_abbrev":"bot"},
+      {"category":"Volumen","from_unit":"Litro","to_unit":"Botellas","multiplier":1,"to_abbrev":"bot"},
+      {"category":"Volumen","from_unit":"Mililitro","to_unit":"Botellas","multiplier":0.001,"to_abbrev":"bot"},
+      {"category":"Volumen","from_unit":"Metro cúbico","to_unit":"Botellas","multiplier":1000,"to_abbrev":"bot"},
+      {"category":"Unidad","from_unit":"Docena","to_unit":"Unidades","multiplier":12,"to_abbrev":"u"},
+      {"category":"Unidad","from_unit":"Media docena","to_unit":"Unidades","multiplier":6,"to_abbrev":"u"},
+      {"category":"Unidad","from_unit":"Centena","to_unit":"Unidades","multiplier":100,"to_abbrev":"u"},
+      {"category":"Masa (peso) miel","from_unit":"Litro","to_unit":"Libras","multiplier":3.2,"to_abbrev":"lb"},
+      {"category":"Masa (peso) miel","from_unit":"Galón","to_unit":"Libras","multiplier":12.8,"to_abbrev":"lb"},
+      {"category":"Masa (peso) miel","from_unit":"Cuarto de galón","to_unit":"Libras","multiplier":3.2,"to_abbrev":"lb"},
+      {"category":"Masa (peso) miel","from_unit":"Botella","to_unit":"Libras","multiplier":3.2,"to_abbrev":"lb"},
+      {"category":"Masa (peso) miel","from_unit":"Media botella","to_unit":"Libras","multiplier":1.6,"to_abbrev":"lb"},
+      {"category":"Masa (peso) miel","from_unit":"Cuarto de botella","to_unit":"Libras","multiplier":0.8,"to_abbrev":"lb"},
+      {"category":"Masa (peso) miel","from_unit":"Quintal","to_unit":"Libras","multiplier":100,"to_abbrev":"lb"},
+      {"category":"Masa (peso) miel","from_unit":"Arroba","to_unit":"Libras","multiplier":25,"to_abbrev":"lb"},
+      {"category":"Masa (peso) miel","from_unit":"Libra","to_unit":"Libras","multiplier":1,"to_abbrev":"lb"},
+      {"category":"Masa (peso) miel","from_unit":"Kilogramo","to_unit":"Libras","multiplier":2.20462,"to_abbrev":"lb"},
+      {"category":"Masa (peso) miel","from_unit":"Onza","to_unit":"Libras","multiplier":0.0625,"to_abbrev":"lb"}
+    ];
+
+    function getCategoryRules(category, rules) {
+      return rules.filter(r => r.category === category);
+    }
+
+    function findDuplicates(categoryRules, fromUnit, toUnit) {
+      return categoryRules.filter(r => r.from_unit === fromUnit && r.to_unit === toUnit);
+    }
+
+    function buildGraph(categoryRules) {
+      const graph = new Map();
+
+      function addEdge(from, to, factor) {
+        if (!graph.has(from)) graph.set(from, []);
+        graph.get(from).push({ to, factor });
+      }
+
+      for (const rule of categoryRules) {
+        addEdge(rule.from_unit, rule.to_unit, rule.multiplier);
+        addEdge(rule.to_unit, rule.from_unit, 1 / rule.multiplier);
+      }
+
+      return graph;
+    }
+
+    function bfsFactor(graph, start, end) {
+      if (!graph.has(start) || !graph.has(end)) return null;
+      const queue = [{ unit: start, factor: 1, path: [start] }];
+      const visited = new Set([start]);
+
+      while (queue.length) {
+        const current = queue.shift();
+        if (current.unit === end) return current;
+
+        for (const edge of graph.get(current.unit) || []) {
+          if (visited.has(edge.to)) continue;
+          visited.add(edge.to);
+          queue.push({
+            unit: edge.to,
+            factor: current.factor * edge.factor,
+            path: [...current.path, edge.to]
+          });
+        }
+      }
+
+      return null;
+    }
+
+    function convert(category, value, from_unit, to_unit, rules) {
+      if (!category || !from_unit || !to_unit) {
+        return { ok: false, error: 'Debe seleccionar categoría y unidades.' };
+      }
+
+      if (value === '' || value === null || Number.isNaN(Number(value))) {
+        return { ok: false, error: 'Ingrese un valor numérico válido.' };
+      }
+
+      const numericValue = Number(value);
+      if (numericValue < 0) {
+        return { ok: false, error: 'El valor no puede ser negativo.' };
+      }
+
+      const categoryRules = getCategoryRules(category, rules);
+      if (!categoryRules.length) {
+        return { ok: false, error: 'No hay reglas para la categoría seleccionada.' };
+      }
+
+      const sameDirection = findDuplicates(categoryRules, from_unit, to_unit);
+      if (sameDirection.length > 0) {
+        const chosen = sameDirection[0];
+        return {
+          ok: true,
+          result: numericValue * chosen.multiplier,
+          factor: chosen.multiplier,
+          path_used: [from_unit, to_unit],
+          warning: sameDirection.length > 1 ? 'Hay más de una equivalencia para esta conversión' : undefined
+        };
+      }
+
+      const inverseDirection = findDuplicates(categoryRules, to_unit, from_unit);
+      if (inverseDirection.length > 0) {
+        const chosen = inverseDirection[0];
+        return {
+          ok: true,
+          result: numericValue * (1 / chosen.multiplier),
+          factor: 1 / chosen.multiplier,
+          path_used: [from_unit, to_unit],
+          warning: inverseDirection.length > 1 ? 'Hay más de una equivalencia para esta conversión' : undefined
+        };
+      }
+
+      const graph = buildGraph(categoryRules);
+      const route = bfsFactor(graph, from_unit, to_unit);
+
+      if (!route) {
+        return { ok: false, error: 'No hay conversión disponible entre estas unidades en esta categoría' };
+      }
+
+      return {
+        ok: true,
+        result: numericValue * route.factor,
+        factor: route.factor,
+        path_used: route.path
+      };
+    }
+
+    const categoryEl = document.getElementById('category');
+    const fromUnitEl = document.getElementById('fromUnit');
+    const toUnitEl = document.getElementById('toUnit');
+    const valueEl = document.getElementById('value');
+    const convertBtn = document.getElementById('convertBtn');
+    const swapBtn = document.getElementById('swapBtn');
+    const resultEl = document.getElementById('result');
+    const factorEl = document.getElementById('factor');
+    const pathEl = document.getElementById('path');
+    const errorMsgEl = document.getElementById('errorMsg');
+    const warningMsgEl = document.getElementById('warningMsg');
+
+    function clearMessages() {
+      errorMsgEl.textContent = '';
+      warningMsgEl.textContent = '';
+      errorMsgEl.classList.remove('show');
+      warningMsgEl.classList.remove('show');
+    }
+
+    function showError(message) {
+      errorMsgEl.textContent = message;
+      errorMsgEl.classList.add('show');
+    }
+
+    function showWarning(message) {
+      warningMsgEl.textContent = message;
+      warningMsgEl.classList.add('show');
+    }
+
+    function setUnitsForCategory(category) {
+      const categoryRules = getCategoryRules(category, CONVERSIONS);
+      const units = [...new Set(categoryRules.flatMap(r => [r.from_unit, r.to_unit]))].sort((a, b) => a.localeCompare(b));
+
+      fromUnitEl.innerHTML = '';
+      toUnitEl.innerHTML = '';
+
+      for (const unit of units) {
+        const optionFrom = new Option(unit, unit);
+        const optionTo = new Option(unit, unit);
+        fromUnitEl.add(optionFrom);
+        toUnitEl.add(optionTo);
+      }
+
+      if (units.length > 1) {
+        fromUnitEl.value = units[0];
+        toUnitEl.value = units[1];
+      }
+    }
+
+    function formatNumber(n) {
+      return Number(n).toLocaleString('es-ES', { maximumFractionDigits: 12 });
+    }
+
+    function handleConvert() {
+      clearMessages();
+      const conversion = convert(
+        categoryEl.value,
+        valueEl.value,
+        fromUnitEl.value,
+        toUnitEl.value,
+        CONVERSIONS
+      );
+
+      if (!conversion.ok) {
+        resultEl.textContent = '—';
+        factorEl.textContent = '—';
+        pathEl.textContent = '—';
+        showError(conversion.error || 'Error desconocido.');
+        return;
+      }
+
+      resultEl.textContent = formatNumber(conversion.result);
+      factorEl.textContent = formatNumber(conversion.factor);
+      pathEl.textContent = conversion.path_used.join(' -> ');
+
+      if (conversion.warning) showWarning(conversion.warning);
+    }
+
+    function init() {
+      const categories = [...new Set(CONVERSIONS.map(c => c.category))].sort((a, b) => a.localeCompare(b));
+      for (const cat of categories) categoryEl.add(new Option(cat, cat));
+
+      setUnitsForCategory(categoryEl.value);
+
+      categoryEl.addEventListener('change', () => setUnitsForCategory(categoryEl.value));
+      convertBtn.addEventListener('click', handleConvert);
+      swapBtn.addEventListener('click', () => {
+        const currentFrom = fromUnitEl.value;
+        fromUnitEl.value = toUnitEl.value;
+        toUnitEl.value = currentFrom;
+      });
+
+      // Ejemplos en consola
+      console.log('Ejemplo 1:', convert('Longitud', 2, 'Metro', 'Centímetros', CONVERSIONS));
+      console.log('Ejemplo 2:', convert('Longitud', 1, 'Kilómetro', 'Centímetros', CONVERSIONS));
+      console.log('Ejemplo 3:', convert('Masa (peso)', 5, 'Anega o fanega', 'Libras', CONVERSIONS));
+    }
+
+    init();
+  </script>
+</body>
+</html>
