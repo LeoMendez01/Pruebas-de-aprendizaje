@@ -22,4 +22,4 @@ Este repositorio contiene:
 - `index.html`, `styles.css`, `app.js`: UI y lógica de la calculadora.
 - `android/`: proyecto Android para generar APK.
 - `scripts/sync-web-assets.sh`: copia los archivos web al módulo Android.
-- `.github/workflows/build-android-apk.yml`: build automático del APK.
+- `.github/workflows/build-android-apk.yml`: build automático del APK (JDK 17 + Gradle 8.2.1).
