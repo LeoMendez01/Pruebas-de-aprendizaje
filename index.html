@@ -2,7 +2,8 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f172a" />
   <title>Calculadora / Conversor de Unidades</title>
   <style>
     :root {
@@ -24,10 +25,14 @@
       font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       color: var(--text);
       background: radial-gradient(circle at top, #1e293b, var(--bg));
-      min-height: 100vh;
+      min-height: 100dvh;
       display: grid;
       place-items: center;
-      padding: 24px;
+      padding: 14px;
+      padding-left: max(14px, env(safe-area-inset-left));
+      padding-right: max(14px, env(safe-area-inset-right));
+      padding-top: max(14px, env(safe-area-inset-top));
+      padding-bottom: max(14px, env(safe-area-inset-bottom));
     }
 
     .app {
@@ -49,7 +54,7 @@
 
     h1 {
       margin: 0;
-      font-size: 1.3rem;
+      font-size: clamp(1.1rem, 2.4vw, 1.35rem);
     }
 
     .sub {
@@ -83,8 +88,9 @@
       border: 1px solid var(--border);
       background: #0b1220;
       color: var(--text);
-      padding: 10px 12px;
+      padding: 12px 14px;
       font-size: 1rem;
+      min-height: 46px;
     }
 
     button {
@@ -111,6 +117,10 @@
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
+    }
+
+    .row button {
+      flex: 1 1 180px;
     }
 
     .result {
@@ -150,7 +160,32 @@
     }
 
     @media (max-width: 700px) {
-      .content { grid-template-columns: 1fr; }
+      body { padding: 0; }
+      .app {
+        min-height: 100dvh;
+        border-radius: 0;
+        border-left: 0;
+        border-right: 0;
+      }
+      .content { grid-template-columns: 1fr; padding: 16px; }
+      .header { padding: 16px; }
+      .result {
+        position: sticky;
+        bottom: 0;
+        padding-bottom: calc(16px + env(safe-area-inset-bottom));
+        background: rgba(15, 23, 42, .95);
+        backdrop-filter: blur(5px);
+      }
+      .row {
+        position: sticky;
+        bottom: 8px;
+        z-index: 2;
+        background: linear-gradient(to top, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.65));
+        padding-top: 8px;
+      }
+      .row button {
+        flex: 1 1 calc(50% - 5px);
+      }
     }
   </style>
 </head>
@@ -158,7 +193,7 @@
   <main class="app">
     <header class="header">
       <h1>Calculadora / Conversor de Unidades</h1>
-      <p class="sub">Conversión directa, inversa y por ruta (grafo) usando reglas JSON.</p>
+      <p class="sub">Optimizada para teléfono: conversión directa, inversa y por ruta (grafo).</p>
     </header>
 
     <section class="content">
@@ -179,7 +214,7 @@
 
       <div class="field full">
         <label for="value">Valor</label>
-        <input id="value" type="number" step="any" min="0" placeholder="Ej: 10" />
+        <input id="value" type="number" step="any" min="0" inputmode="decimal" placeholder="Ej: 10" />
       </div>
 
       <div class="row full">
