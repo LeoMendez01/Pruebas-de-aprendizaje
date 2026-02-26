@@ -1,32 +1,28 @@
 Conversor de Unidades (PWA)
 ===========================
 
-Este paquete contiene una app web instalable (PWA).
+Esta app está pensada para usarse en teléfono como PWA instalable.
 
-IMPORTANTE
-----------
-No abrir index.html con doble clic para modo app/offline.
-Para que funcione como app instalable, debes levantar un servidor local.
+USO RECOMENDADO (CON WORKFLOW)
+------------------------------
+1) Haz push de la rama al repositorio.
+2) Ejecuta el workflow: "Deploy PWA to GitHub Pages".
+3) Abre la URL pública generada por GitHub Pages.
+4) En el teléfono, abre esa URL y usa "Instalar app" desde el navegador.
 
-Opción rápida en Windows
-------------------------
-1) Doble clic en: iniciar_app.bat
-2) Se abrirá el navegador en http://127.0.0.1:8080
-3) Desde Chrome/Edge puedes instalarla (botón "Instalar app" o menú instalar)
+Por qué así
+-----------
+- Evita abrir archivos sueltos en local.
+- Service Worker y manifest funcionan correctamente en HTTPS.
+- Queda una URL lista para compartir e instalar en cualquier teléfono.
 
-Opción rápida en Linux/Mac
---------------------------
-1) En terminal:
-   chmod +x iniciar_app.sh
-   ./iniciar_app.sh
-2) Abre http://127.0.0.1:8080
+Alternativa local (solo pruebas)
+--------------------------------
+- Windows: doble clic en `iniciar_app.bat`
+- Linux/Mac: `./iniciar_app.sh`
 
-Si no tienes Python
--------------------
-Puedes usar cualquier servidor estático (por ejemplo VSCode Live Server, nginx, etc.).
-
-Archivos principales
---------------------
+Archivos de la app
+------------------
 - index.html
 - manifest.webmanifest
 - sw.js
