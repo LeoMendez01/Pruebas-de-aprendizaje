@@ -10,6 +10,12 @@ USO RECOMENDADO (CON WORKFLOW)
 3) Abre la URL pública generada por GitHub Pages.
 4) En el teléfono, abre esa URL y usa "Instalar app" desde el navegador.
 
+DESCARGA DIRECTA DESDE WORKFLOW
+--------------------------------
+1) Ejecuta el workflow: "Descargar app (artifact)".
+2) En la ejecución, entra a Artifacts y descarga `conversor-app-descargable`.
+3) Descomprime y ejecuta `iniciar_app.bat` (Windows) o `iniciar_app.sh` (Linux/Mac).
+
 Por qué así
 -----------
 - Evita abrir archivos sueltos en local.
