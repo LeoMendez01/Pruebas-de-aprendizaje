@@ -1,0 +1,45 @@
+name: Descargar app (artifact)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main", "work"]
+
+jobs:
+  build-downloadable-app:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify app files
+        run: |
+          test -f index.html
+          test -f manifest.webmanifest
+          test -f sw.js
+          test -f assets/icon.svg
+          test -f README-APP.txt
+          test -f iniciar_app.bat
+          test -f iniciar_app.sh
+
+      - name: Package app for download
+        run: |
+          mkdir -p dist/conversor-app/assets
+          cp index.html dist/conversor-app/index.html
+          cp manifest.webmanifest dist/conversor-app/manifest.webmanifest
+          cp sw.js dist/conversor-app/sw.js
+          cp assets/icon.svg dist/conversor-app/assets/icon.svg
+          cp README-APP.txt dist/conversor-app/README-APP.txt
+          cp iniciar_app.bat dist/conversor-app/iniciar_app.bat
+          cp iniciar_app.sh dist/conversor-app/iniciar_app.sh
+          cd dist
+          zip -r conversor-app-descargable.zip conversor-app
+
+      - name: Upload downloadable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: conversor-app-descargable
+          path: dist/conversor-app-descargable.zip
+          if-no-files-found: error
+          retention-days: 7
