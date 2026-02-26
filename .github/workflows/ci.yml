@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  validate-index:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate required files
+        run: |
+          test -f index.html
+
+      - name: Validate converter contract in index.html
+        run: |
+          grep -q "function convert(category, value, from_unit, to_unit, rules)" index.html
+          grep -q "const CONVERSIONS =" index.html
+          grep -q "No hay conversión disponible entre estas unidades en esta categoría" index.html
+
+      - name: Basic HTML sanity checks
+        run: |
+          grep -q "<html" index.html
+          grep -q "<script>" index.html
+          grep -q "</html>" index.html
