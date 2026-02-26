@@ -29,3 +29,19 @@ jobs:
           grep -q "<html" index.html
           grep -q "<script>" index.html
           grep -q "</html>" index.html
+
+      - name: Create downloadable package
+        run: |
+          mkdir -p dist
+          cp index.html dist/index.html
+          cp .github/workflows/ci.yml dist/ci.yml
+          cd dist
+          zip -r unit-converter-package.zip index.html ci.yml
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-converter-package
+          path: dist/unit-converter-package.zip
+          if-no-files-found: error
+          retention-days: 7
