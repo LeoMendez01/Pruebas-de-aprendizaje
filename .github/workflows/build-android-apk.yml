@@ -3,7 +3,8 @@ name: Build Android APK
 on:
   workflow_dispatch:
   push:
-    branches: ["main", "master", "work"]
+    branches: ["**"]
+  pull_request:
 
 jobs:
   build:
@@ -21,13 +22,15 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: 8.7
 
       - name: Sync web assets into Android project
         run: ./scripts/sync-web-assets.sh
 
       - name: Build debug APK
         working-directory: android
-        run: gradle assembleDebug
+        run: gradle --no-daemon assembleDebug
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4

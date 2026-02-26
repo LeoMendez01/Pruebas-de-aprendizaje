@@ -12,10 +12,11 @@ Este repositorio contiene:
 
 ## Opción 2: instalar APK de Android (sin Android Studio)
 1. Sube este repo a GitHub.
-2. Ve a **Actions** y ejecuta el workflow **Build Android APK**.
-3. Cuando termine, descarga el artefacto **monitoreo-movil-apk**.
-4. Dentro del zip encontrarás `app-debug.apk`.
-5. Pasa ese APK a tu teléfono Android e instálalo (habilitando apps desconocidas si el sistema lo solicita).
+2. Ve a **Actions** y abre el workflow **Build Android APK**.
+3. Haz clic en **Run workflow** (o dispara el build con un push/PR, ahora corre en cualquier rama).
+4. Cuando termine, descarga el artefacto **monitoreo-movil-apk**.
+5. Dentro del zip encontrarás `app-debug.apk`.
+6. Pasa ese APK a tu teléfono Android e instálalo (habilitando apps desconocidas si el sistema lo solicita).
 
 ## Estructura relevante
 - `index.html`, `styles.css`, `app.js`: UI y lógica de la calculadora.
