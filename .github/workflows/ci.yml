@@ -17,12 +17,16 @@ jobs:
       - name: Validate required files
         run: |
           test -f index.html
+          test -f manifest.webmanifest
+          test -f sw.js
+          test -f assets/icon.svg
 
       - name: Validate converter contract in index.html
         run: |
           grep -q "function convert(category, value, from_unit, to_unit, rules)" index.html
           grep -q "const CONVERSIONS =" index.html
           grep -q "No hay conversión disponible entre estas unidades en esta categoría" index.html
+          grep -q "Instalar app" index.html
 
       - name: Basic HTML sanity checks
         run: |
@@ -30,18 +34,20 @@ jobs:
           grep -q "<script>" index.html
           grep -q "</html>" index.html
 
-      - name: Create downloadable package
+      - name: Create downloadable app package
         run: |
-          mkdir -p dist
-          cp index.html dist/index.html
-          cp .github/workflows/ci.yml dist/ci.yml
+          mkdir -p dist/unit-converter-app/assets
+          cp index.html dist/unit-converter-app/index.html
+          cp manifest.webmanifest dist/unit-converter-app/manifest.webmanifest
+          cp sw.js dist/unit-converter-app/sw.js
+          cp assets/icon.svg dist/unit-converter-app/assets/icon.svg
           cd dist
-          zip -r unit-converter-package.zip index.html ci.yml
+          zip -r unit-converter-app.zip unit-converter-app
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: unit-converter-package
-          path: dist/unit-converter-package.zip
+          name: unit-converter-app
+          path: dist/unit-converter-app.zip
           if-no-files-found: error
           retention-days: 7
